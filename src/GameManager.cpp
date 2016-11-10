@@ -153,6 +153,12 @@ void GameManager::init() {
 	//Initialize IL and ILU
 	ilInit();
 	iluInit();
+
+	color_texture = loadTexture("resources/color_texture.jpg");
+
+	
+	CHECK_GL_ERROR();
+
 }
 
 void GameManager::render() {
@@ -169,10 +175,21 @@ void GameManager::render() {
 	model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, 0.0f, -0.5f));
 	glUniformMatrix4fv(program->getUniform("model"), 1, 0, glm::value_ptr(model_matrix));
 
+	glActiveTexture(GL_TEXTURE0);
+	CHECK_GL_ERROR();
+	glBindTexture(GL_TEXTURE_2D, color_texture);
+	CHECK_GL_ERROR();
+	glUniform1i(program->getUniform("color_texture"), 0);
+	CHECK_GL_ERROR();
+	
+
 	//Render geometry
 	glPrimitiveRestartIndex(mesh.restart_token);
 	glBindVertexArray(vao);
 	glDrawElements(GL_TRIANGLE_STRIP, mesh.indices.size(), GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+	CHECK_GL_ERROR();
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 	CHECK_GL_ERROR();
 }
 
