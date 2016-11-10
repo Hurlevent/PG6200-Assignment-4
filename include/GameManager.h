@@ -51,6 +51,8 @@ public:
 	 */
 	void render();
 
+	void renderNormals(bool use_bump_map);
+
 protected:
 	/**
 	 * Creates the OpenGL context using SDL
@@ -79,6 +81,10 @@ protected:
 	 * Creates vertex array objects
 	 */
 	void createVAO();
+	/**
+	*	Creates an FBO where the rgb values represents normal vectors
+	*/
+	void createNormalFBO();
 
 	static const unsigned int window_width = 800;
 	static const unsigned int window_height = 600;
@@ -89,14 +95,22 @@ private:
 	GLuint index_bo; //< VBO for vertex data
 	GLuint height_texture, color_texture; //<! Our heightmap texture
 	
-	std::shared_ptr<GLUtils::Program> program;
+	std::shared_ptr<GLUtils::Program> rendering_program, normal_program;
+
+	std::shared_ptr<GLUtils::FBO> normal_map, bump_map;
 
 	Timer my_timer; //< Timer for machine independent motion
 
 	glm::mat4 projection_matrix; //< OpenGL projection matrix
 	glm::mat4 model_matrix; //< OpenGL model transformation matrix
 	glm::mat4 view_matrix; //< OpenGL camera/view matrix
-	glm::mat3 normal_matrix; //< OpenGL matrix to transfor normals
+	glm::mat3 normal_matrix; //< OpenGL matrix to transform normals
+
+	glm::mat4 some_transform_matrix_for_normal_program;
+
+	glm::vec3 normals;
+
+	glm::vec3 light_pos;
 
 	SDL_Window* main_window; //< Our window handle
 	SDL_GLContext main_context; //< Our opengl context handle 

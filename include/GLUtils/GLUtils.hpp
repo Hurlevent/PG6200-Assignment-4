@@ -12,6 +12,7 @@
 
 #include "GLUtils/Program.hpp"
 #include "GLUtils/VBO.hpp"
+#include "GLUtils/FBO.hpp"
 #include "GameException.h"
 
 

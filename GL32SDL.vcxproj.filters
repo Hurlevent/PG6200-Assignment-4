@@ -36,6 +36,9 @@
     <ClInclude Include="include\GLUtils\VBO.hpp">
       <Filter>Header Files\GLUtils</Filter>
     </ClInclude>
+    <ClInclude Include="FBO.hpp">
+      <Filter>Header Files\GLUtils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\GameManager.cpp">
@@ -53,6 +56,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="shaders\test.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\normal.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\normal.vert">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

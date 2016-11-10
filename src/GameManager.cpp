@@ -74,7 +74,7 @@ void GameManager::createOpenGLContext() {
 void GameManager::setOpenGLStates() {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glEnable(GL_PRIMITIVE_RESTART);
 	glClearColor(0.0, 0.0, 0.5, 1.0);
 }
@@ -83,12 +83,18 @@ void GameManager::createMatrices() {
 	projection_matrix = glm::perspective(45.0f, window_width / (float) window_height, 0.2f, 3.0f);
 
 	model_matrix = glm::mat4(1.0);
-	model_matrix = glm::rotate(model_matrix, 25.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+	model_matrix = glm::rotate(model_matrix, 90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+	//model_matrix = glm::rotate(model_matrix, 25.0f, glm::vec3(0.0f, 1.0f, 0.0f)); // Kan slettes
 	model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, -0.5f, -0.5f));
 
 	view_matrix = glm::mat4(1.0f);
-	view_matrix = glm::rotate(view_matrix, 25.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+	//view_matrix = glm::rotate(view_matrix, 25.0f, glm::vec3(1.0f, 0.0f, 0.0f)); // Kan slettesre
 	view_matrix = glm::translate(view_matrix, glm::vec3(0.0f, 0.0f, -1.0f));
+
+	normals = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	light_pos = glm::vec3(200.0f, 200.0f, 200.0f);
+
 }
 
 void GameManager::createSimpleProgram() {
@@ -96,17 +102,28 @@ void GameManager::createSimpleProgram() {
 	std::string vs_src = readFile("shaders/test.vert");
 
 	//Compile shaders, attach to program object, and link
-	program.reset(new Program(vs_src, fs_src));
+	rendering_program.reset(new Program(vs_src, fs_src));
 
 	//Set uniforms for the program.
-	program->use();
+	rendering_program->use();
 
-	glUniformMatrix4fv(program->getUniform("projection"), 1, 0, glm::value_ptr(projection_matrix));
-	glUniformMatrix4fv(program->getUniform("view"), 1, 0, glm::value_ptr(view_matrix));
-	glUniformMatrix4fv(program->getUniform("model"), 1, 0, glm::value_ptr(model_matrix));
-
+	glUniformMatrix4fv(rendering_program->getUniform("projection"), 1, 0, glm::value_ptr(projection_matrix));
+	glUniformMatrix4fv(rendering_program->getUniform("view"), 1, 0, glm::value_ptr(view_matrix));
+	glUniformMatrix4fv(rendering_program->getUniform("model"), 1, 0, glm::value_ptr(model_matrix));
+	glUniform3fv(rendering_program->getUniform("normal"), 1, glm::value_ptr(normals));
+	glUniform3fv(rendering_program->getUniform("light_pos"), 1, glm::value_ptr(light_pos));
 	
 	glUseProgram(0);
+
+	normal_program.reset(new Program(readFile("shaders/normal.vert"), readFile("shaders/normal.frag")));
+
+	normal_program->use();
+
+
+	some_transform_matrix_for_normal_program = glm::mat4(1.0f);
+	glUniformMatrix4fv(normal_program->getUniform("some_transform_matrix"), 1, 0, glm::value_ptr(some_transform_matrix_for_normal_program));
+
+	normal_program->disuse();
 }
 
 void GameManager::createVAO() {
@@ -125,14 +142,24 @@ void GameManager::createVAO() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size()*sizeof(unsigned int), mesh.indices.data(), GL_STATIC_DRAW);
 	
 	//Set input to the shader
-	program->setAttributePointer("in_Position",	2, GL_FLOAT, GL_FALSE, 0, 0);
+	rendering_program->setAttributePointer("in_Position", 2, GL_FLOAT, GL_FALSE, 0, 0);
 	CHECK_GL_ERROR();
-	
+
+	normal_program->setAttributePointer("in_Position", 2, GL_FLOAT, GL_FALSE, 0, 0);
+	CHECK_GL_ERROR();
+
 	//Unbind VBOs and VAO
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	CHECK_GL_ERROR();
+}
+
+void GameManager::createNormalFBO()
+{
+	normal_map.reset(new GLUtils::FBO(window_width, window_height));
+
+
 }
 
 void GameManager::init() {
@@ -167,22 +194,21 @@ void GameManager::render() {
 
 	//Clear screen, and set the correct program
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	program->use();
-
+	rendering_program->use();
+	
 	//Rotate the model
 	model_matrix = glm::translate(model_matrix, glm::vec3(0.5f, 0.0f, 0.5f));
-	model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 1.0f, 0.0f));
+	//model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 1.0f, 0.0f));
 	model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, 0.0f, -0.5f));
-	glUniformMatrix4fv(program->getUniform("model"), 1, 0, glm::value_ptr(model_matrix));
+	glUniformMatrix4fv(rendering_program->getUniform("model"), 1, 0, glm::value_ptr(model_matrix));
 
 	glActiveTexture(GL_TEXTURE0);
 	CHECK_GL_ERROR();
 	glBindTexture(GL_TEXTURE_2D, color_texture);
 	CHECK_GL_ERROR();
-	glUniform1i(program->getUniform("color_texture"), 0);
+	glUniform1i(rendering_program->getUniform("color_texture"), 0);
 	CHECK_GL_ERROR();
 	
-
 	//Render geometry
 	glPrimitiveRestartIndex(mesh.restart_token);
 	glBindVertexArray(vao);
@@ -190,7 +216,24 @@ void GameManager::render() {
 	CHECK_GL_ERROR();
 
 	glBindTexture(GL_TEXTURE_2D, 0);
+	rendering_program->disuse();
 	CHECK_GL_ERROR();
+}
+
+void GameManager::renderNormals(bool use_bumb_map)
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	normal_program->use();
+
+
+
+	//Render geometry
+	glPrimitiveRestartIndex(mesh.restart_token);
+	glBindVertexArray(vao);
+	glDrawElements(GL_TRIANGLE_STRIP, mesh.indices.size(), GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+	CHECK_GL_ERROR();
+
+	normal_program->disuse();
 }
 
 void GameManager::play() {

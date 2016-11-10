@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FBO.hpp" />
     <ClInclude Include="include\GameManager.h" />
     <ClInclude Include="include\GlTools.h" />
     <ClInclude Include="include\GLUtils\GLUtils.hpp" />
@@ -24,6 +25,8 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\normal.frag" />
+    <None Include="shaders\normal.vert" />
     <None Include="shaders\test.frag" />
     <None Include="shaders\test.vert" />
   </ItemGroup>
