@@ -159,7 +159,7 @@ void GameManager::createNormalFBO()
 {
 	normal_map.reset(new GLUtils::FBO(window_width, window_height));
 
-
+	CHECK_GL_ERROR();
 }
 
 void GameManager::init() {
@@ -177,6 +177,8 @@ void GameManager::init() {
 	createSimpleProgram();
 	createVAO();
 	
+	createNormalFBO();
+
 	//Initialize IL and ILU
 	ilInit();
 	iluInit();
@@ -223,8 +225,10 @@ void GameManager::render() {
 void GameManager::renderNormals(bool use_bumb_map)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	normal_map->bind();
 	normal_program->use();
 
+	
 
 
 	//Render geometry
@@ -234,6 +238,7 @@ void GameManager::renderNormals(bool use_bumb_map)
 	CHECK_GL_ERROR();
 
 	normal_program->disuse();
+	normal_map->unbind();
 }
 
 void GameManager::play() {
@@ -258,6 +263,7 @@ void GameManager::play() {
 		}
 
 		//Render, and swap front and back buffers
+		renderNormals(false);
 		render();
 		SDL_GL_SwapWindow(main_window);
 	}

@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="FBO.hpp" />
     <ClInclude Include="include\GameManager.h" />
     <ClInclude Include="include\GlTools.h" />
+    <ClInclude Include="include\GLUtils\FBO.hpp" />
     <ClInclude Include="include\GLUtils\GLUtils.hpp" />
     <ClInclude Include="include\GLUtils\Program.hpp" />
     <ClInclude Include="include\GLUtils\VBO.hpp" />

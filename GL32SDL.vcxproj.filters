@@ -36,7 +36,7 @@
     <ClInclude Include="include\GLUtils\VBO.hpp">
       <Filter>Header Files\GLUtils</Filter>
     </ClInclude>
-    <ClInclude Include="FBO.hpp">
+    <ClInclude Include="include\GLUtils\FBO.hpp">
       <Filter>Header Files\GLUtils</Filter>
     </ClInclude>
   </ItemGroup>
