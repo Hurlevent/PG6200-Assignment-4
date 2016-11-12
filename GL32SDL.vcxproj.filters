@@ -52,16 +52,22 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\test.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="shaders\test.vert">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="shaders\normal.frag">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="shaders\normal.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\regular.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\regular.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\normal_mapping.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\normal_mapping.vert">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

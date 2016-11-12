@@ -11,6 +11,8 @@
 #include "Timer.h"
 #include "GLUtils/GLUtils.hpp"
 
+#define RENDERING_REGULAR 0
+#define RENDERING_NORMAL 1
 
 /**
  * This class handles the game logic and display.
@@ -58,7 +60,7 @@ protected:
 	 * Creates the OpenGL context using SDL
 	 */
 	void createOpenGLContext();
-
+	
 	/**
 	 * Sets states for OpenGL that we want to keep persistent
 	 * throughout the game
@@ -95,7 +97,7 @@ private:
 	GLuint index_bo; //< VBO for vertex data
 	GLuint height_texture, color_texture; //<! Our heightmap texture
 	
-	std::shared_ptr<GLUtils::Program> rendering_program, normal_program;
+	std::shared_ptr<GLUtils::Program> regular_program, normal_map_program, normal_program;
 
 	std::shared_ptr<GLUtils::FBO> normal_map, bump_map;
 
@@ -111,6 +113,8 @@ private:
 	glm::vec3 normals;
 
 	glm::vec3 light_pos;
+
+	int m_rendering_mode;
 
 	SDL_Window* main_window; //< Our window handle
 	SDL_GLContext main_context; //< Our opengl context handle 
