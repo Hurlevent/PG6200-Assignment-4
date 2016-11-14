@@ -25,6 +25,8 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\bump.frag" />
+    <None Include="shaders\bump.vert" />
     <None Include="shaders\normal.frag" />
     <None Include="shaders\normal.vert" />
     <None Include="shaders\normal_mapping.frag" />

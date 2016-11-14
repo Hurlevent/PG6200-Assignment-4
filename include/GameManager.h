@@ -13,6 +13,7 @@
 
 #define RENDERING_REGULAR 0
 #define RENDERING_NORMAL 1
+#define RENDERING_BUMP 2
 
 /**
  * This class handles the game logic and display.
@@ -95,9 +96,10 @@ private:
 	GLuint vao; //< Vertex array object
 	GLuint vertex_bo; //< VBO for vertex data
 	GLuint index_bo; //< VBO for vertex data
-	GLuint height_texture, color_texture; //<! Our heightmap texture
+	GLuint normal_bo; // new way to implement normals! DELETE THIS COMMENT
+	GLuint color_texture, bump_map_texture; //<! Our heightmap texture
 	
-	std::shared_ptr<GLUtils::Program> regular_program, normal_map_program, normal_program;
+	std::shared_ptr<GLUtils::Program> regular_program, normal_map_program, normal_program, bump_map_program;
 
 	std::shared_ptr<GLUtils::FBO> normal_map, bump_map;
 
@@ -115,6 +117,8 @@ private:
 	glm::vec3 light_pos;
 
 	int m_rendering_mode;
+
+	bool m_rotating;
 
 	SDL_Window* main_window; //< Our window handle
 	SDL_GLContext main_context; //< Our opengl context handle 

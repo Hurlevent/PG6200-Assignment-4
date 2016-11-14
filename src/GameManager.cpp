@@ -21,7 +21,7 @@ using GLUtils::Program;
 using GLUtils::readFile;
 
 
-GameManager::GameManager() : m_rendering_mode(RENDERING_REGULAR) {
+GameManager::GameManager() : m_rendering_mode(RENDERING_REGULAR), m_rotating(false) {
 	my_timer.restart();
 	mesh = createTriangleStripMesh(10, 10);
 }
@@ -83,6 +83,9 @@ void GameManager::setOpenGLStates() {
 	glViewport(0, 0, window_width, window_height);
 }
 
+// HUSK Å TRANSFORMERE NORMALER
+// ALLE VERTEXER TRENGER EN NORMAL!
+
 void GameManager::createMatrices() {
 	projection_matrix = glm::perspective(45.0f, window_width / (float) window_height, 0.2f, 3.0f);
 
@@ -125,6 +128,7 @@ void GameManager::createSimpleProgram() {
 
 	some_transform_matrix_for_normal_program = glm::mat4(1.0f);
 	glUniformMatrix4fv(normal_program->getUniform("n_some_transform_matrix"), 1, 0, glm::value_ptr(some_transform_matrix_for_normal_program));
+	glUniform3fv(normal_program->getUniform("n_normal"), 1, glm::value_ptr(normals));
 
 	normal_program->disuse();
 
@@ -139,6 +143,18 @@ void GameManager::createSimpleProgram() {
 
 	normal_map_program->disuse();
 
+	bump_map_program.reset(new Program(readFile("shaders/bump.vert"), readFile("shaders/bump.frag")));
+
+	bump_map_program->use();
+
+	glUniformMatrix4fv(bump_map_program->getUniform("bump_projection"), 1, 0, glm::value_ptr(projection_matrix));
+	glUniformMatrix4fv(bump_map_program->getUniform("bump_view"), 1, 0, glm::value_ptr(view_matrix));
+	glUniformMatrix4fv(bump_map_program->getUniform("bump_model"), 1, 0, glm::value_ptr(model_matrix));
+	glUniform3fv(bump_map_program->getUniform("bump_light_pos"), 1, glm::value_ptr(light_pos));
+
+	bump_map_program->disuse();
+
+	CHECK_GL_ERROR();
 }
 
 void GameManager::createVAO() {
@@ -155,13 +171,19 @@ void GameManager::createVAO() {
 	glGenBuffers(1, &index_bo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_bo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size()*sizeof(unsigned int), mesh.indices.data(), GL_STATIC_DRAW);
-	
+	/*
+	glGenBuffers(1, &normal_bo);
+	glBindBuffer(GL_ARRAY_BUFFER, normal_bo);
+	glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size()*sizeof(float), );
+	*/
 	//Set input to the shader
 	regular_program->setAttributePointer("in_Position", 2, GL_FLOAT, GL_FALSE, 0, 0);
 	CHECK_GL_ERROR();
 
 	normal_program->setAttributePointer("in_Position", 2, GL_FLOAT, GL_FALSE, 0, 0);
 	CHECK_GL_ERROR();
+
+	bump_map_program->setAttributePointer("in_Position", 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 	//Unbind VBOs and VAO
 	glBindVertexArray(0);
@@ -173,6 +195,7 @@ void GameManager::createVAO() {
 void GameManager::createNormalFBO()
 {
 	normal_map.reset(new GLUtils::FBO(window_width, window_height));
+	bump_map.reset(new GLUtils::FBO(window_width, window_height));
 
 	CHECK_GL_ERROR();
 }
@@ -195,14 +218,16 @@ void GameManager::init() {
 	
 	createNormalFBO();
 
+	CHECK_GL_ERROR();
+
 	//Initialize IL and ILU
 	ilInit();
 	iluInit();
 
+
 	color_texture = loadTexture("resources/color_texture.jpg");
 
-	
-	CHECK_GL_ERROR();
+	bump_map_texture = loadTexture("resources/normal_map.jpg");
 
 }
 
@@ -218,7 +243,9 @@ void GameManager::render() {
 
 		//Rotate the model
 		model_matrix = glm::translate(model_matrix, glm::vec3(0.5f, 0.0f, 0.5f));
-		//model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 1.0f, 0.0f));
+		if (m_rotating) {
+			model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 0.0f, 1.0f));
+		}
 		model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, 0.0f, -0.5f));
 		glUniformMatrix4fv(regular_program->getUniform("reg_model"), 1, 0, glm::value_ptr(model_matrix));
 
@@ -243,13 +270,15 @@ void GameManager::render() {
 		glBindTexture(GL_TEXTURE_2D, 0);
 		regular_program->disuse();
 		CHECK_GL_ERROR();
-	} else
+	} else if(m_rendering_mode == RENDERING_NORMAL)
 	{
 		normal_map_program->use();
 
 		//Rotate the model
 		model_matrix = glm::translate(model_matrix, glm::vec3(0.5f, 0.0f, 0.5f));
-		//model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 1.0f, 0.0f));
+		if (m_rotating) {
+			model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 0.0f, 1.0f));
+		}
 		model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, 0.0f, -0.5f));
 		glUniformMatrix4fv(normal_map_program->getUniform("nm_model"), 1, 0, glm::value_ptr(model_matrix));
 
@@ -274,6 +303,39 @@ void GameManager::render() {
 		glBindTexture(GL_TEXTURE_2D, 0);
 		normal_map_program->disuse();
 		CHECK_GL_ERROR();
+	} else
+	{
+		bump_map_program->use();
+
+		//Rotate the model
+		model_matrix = glm::translate(model_matrix, glm::vec3(0.5f, 0.0f, 0.5f));
+		if (m_rotating) {
+			model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 0.0f, 1.0f));
+		}
+		model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, 0.0f, -0.5f));
+		glUniformMatrix4fv(bump_map_program->getUniform("bump_model"), 1, 0, glm::value_ptr(model_matrix));
+
+		glActiveTexture(GL_TEXTURE0);
+		CHECK_GL_ERROR();
+		glBindTexture(GL_TEXTURE_2D, color_texture);
+		CHECK_GL_ERROR();
+		glUniform1i(bump_map_program->getUniform("bump_color_texture"), 0);
+		CHECK_GL_ERROR();
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, bump_map_texture);
+		glUniform1i(bump_map_program->getUniform("bump_normal_map"), 1);
+		CHECK_GL_ERROR();
+
+		//Render geometry
+		glPrimitiveRestartIndex(mesh.restart_token);
+		glBindVertexArray(vao);
+		glDrawElements(GL_TRIANGLE_STRIP, mesh.indices.size(), GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+		CHECK_GL_ERROR();
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+		bump_map_program->disuse();
+		CHECK_GL_ERROR();
 	}
 }
 
@@ -282,9 +344,6 @@ void GameManager::renderNormals(bool use_bumb_map)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	normal_map->bind();
 	normal_program->use();
-
-	
-
 
 	//Render geometry
 	glPrimitiveRestartIndex(mesh.restart_token);
@@ -314,6 +373,10 @@ void GameManager::play() {
 					m_rendering_mode = RENDERING_REGULAR;
 				if (event.key.keysym.sym == SDLK_2)
 					m_rendering_mode = RENDERING_NORMAL;
+				if (event.key.keysym.sym == SDLK_3)
+					m_rendering_mode = RENDERING_BUMP;
+				if (event.key.keysym.sym == SDLK_SPACE)
+					m_rotating = !m_rotating;
 				break;
 			case SDL_QUIT: //e.g., user clicks the upper right x
 				doExit = true;
