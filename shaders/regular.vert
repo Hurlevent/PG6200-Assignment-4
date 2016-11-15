@@ -4,11 +4,12 @@ uniform mat4 reg_projection;
 uniform mat4 reg_model;
 uniform mat4 reg_view;
 uniform vec3 reg_light_pos;
-uniform vec3 reg_normal;
+//uniform vec3 reg_normal;
+uniform mat4 reg_transpose_inverse_modelview;
 
-in  vec2 in_Position;
+in vec2 in_Position;
+in vec2 in_Normal;
 
-//out vec3 ex_Color;
 out vec2 texture_coord;
 
 out vec3 f_v;
@@ -21,11 +22,10 @@ void main() {
 
 	gl_Position = reg_projection * pos;
 	
-	//ex_Color = vec3(0.5f, 0.5f, 1.0f);
 
 	f_v = normalize(-pos.xyz);
 	f_l = normalize(reg_light_pos - pos.xyz);
-	f_n = normalize(reg_normal);
+	f_n = normalize((reg_transpose_inverse_modelview * vec4(vec3(in_Normal.x, 0.0, in_Normal.y), 1.0f)).xyz); 
 
 	texture_coord = in_Position.xy;
 }

@@ -126,6 +126,7 @@ private:
 	struct TerrainMesh {
 		std::vector<float> vertices;
 		std::vector<unsigned int> indices;
+		std::vector<float> normals;
 		unsigned int restart_token;
 	};
 

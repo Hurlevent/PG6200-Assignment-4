@@ -13,8 +13,10 @@ out vec4 res_Color;
 
 
 void main() {
-	//texture_coord.y *= -1.0f;
-	vec4 color = texture2D(reg_color_texture, texture_coord);
+	float tex_coord_y = texture_coord.y * 1.0f;
+	float tex_coord_x = texture_coord.x * 1.0f;
+	vec2 real_texture_coord = vec2(tex_coord_x, tex_coord_y);
+	vec4 color = texture2D(reg_color_texture, real_texture_coord);
 
 
 	vec3 h = normalize(f_v + f_l);

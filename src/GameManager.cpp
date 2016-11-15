@@ -117,7 +117,7 @@ void GameManager::createSimpleProgram() {
 	glUniformMatrix4fv(regular_program->getUniform("reg_projection"), 1, 0, glm::value_ptr(projection_matrix));
 	glUniformMatrix4fv(regular_program->getUniform("reg_view"), 1, 0, glm::value_ptr(view_matrix));
 	glUniformMatrix4fv(regular_program->getUniform("reg_model"), 1, 0, glm::value_ptr(model_matrix));
-	glUniform3fv(regular_program->getUniform("reg_normal"), 1, glm::value_ptr(normals));
+	//glUniform3fv(regular_program->getUniform("reg_normal"), 1, glm::value_ptr(normals));
 	glUniform3fv(regular_program->getUniform("reg_light_pos"), 1, glm::value_ptr(light_pos));
 	
 	regular_program->disuse();
@@ -170,12 +170,8 @@ void GameManager::createVAO() {
 	//Generate IBO
 	glGenBuffers(1, &index_bo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_bo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size()*sizeof(unsigned int), mesh.indices.data(), GL_STATIC_DRAW);
-	/*
-	glGenBuffers(1, &normal_bo);
-	glBindBuffer(GL_ARRAY_BUFFER, normal_bo);
-	glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size()*sizeof(float), );
-	*/
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(unsigned int), mesh.indices.data(), GL_STATIC_DRAW);
+
 	//Set input to the shader
 	regular_program->setAttributePointer("in_Position", 2, GL_FLOAT, GL_FALSE, 0, 0);
 	CHECK_GL_ERROR();
@@ -184,11 +180,26 @@ void GameManager::createVAO() {
 	CHECK_GL_ERROR();
 
 	bump_map_program->setAttributePointer("in_Position", 2, GL_FLOAT, GL_FALSE, 0, 0);
+	CHECK_GL_ERROR();
+
+
+	//NORMALS
+
+	glGenBuffers(1, &normal_bo);
+	glBindBuffer(GL_ARRAY_BUFFER, normal_bo);
+	glBufferData(GL_ARRAY_BUFFER, mesh.normals.size() * sizeof(float), mesh.normals.data(), GL_STATIC_DRAW);
+
+	// set normal input for regular shader program!
+	regular_program->setAttributePointer("in_Normal", 2, GL_FLOAT, GL_FALSE, 0, 0);
+	CHECK_GL_ERROR();
+
+
 
 	//Unbind VBOs and VAO
 	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
 	CHECK_GL_ERROR();
 }
 
@@ -247,7 +258,10 @@ void GameManager::render() {
 			model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 0.0f, 1.0f));
 		}
 		model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, 0.0f, -0.5f));
+
+		glm::mat4 transpose_inverse_modelview = glm::transpose(glm::inverse(view_matrix * model_matrix));
 		glUniformMatrix4fv(regular_program->getUniform("reg_model"), 1, 0, glm::value_ptr(model_matrix));
+		glUniformMatrix4fv(regular_program->getUniform("reg_transpose_inverse_modelview"), 1, 0, glm::value_ptr(transpose_inverse_modelview));
 
 		glActiveTexture(GL_TEXTURE0);
 		CHECK_GL_ERROR();
@@ -255,12 +269,7 @@ void GameManager::render() {
 		CHECK_GL_ERROR();
 		glUniform1i(regular_program->getUniform("reg_color_texture"), 0);
 		CHECK_GL_ERROR();
-		/*
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, normal_map->getTexture());
-		glUniform1i(regular_program->getUniform("rnormal_map"), 1);
-		CHECK_GL_ERROR();
-	*/
+
 	//Render geometry
 		glPrimitiveRestartIndex(mesh.restart_token);
 		glBindVertexArray(vao);
@@ -369,12 +378,18 @@ void GameManager::play() {
 				if (event.key.keysym.sym == SDLK_q
 						&& event.key.keysym.mod & KMOD_CTRL) //Ctrl+q
 					doExit = true;
-				if (event.key.keysym.sym == SDLK_1)
+				if (event.key.keysym.sym == SDLK_1) {
 					m_rendering_mode = RENDERING_REGULAR;
-				if (event.key.keysym.sym == SDLK_2)
+					std::cout << "Regular rendering" << std::endl;
+				}
+				if (event.key.keysym.sym == SDLK_2) {
 					m_rendering_mode = RENDERING_NORMAL;
-				if (event.key.keysym.sym == SDLK_3)
+					std::cout << "Normalmap rendering" << std::endl;
+				}
+				if (event.key.keysym.sym == SDLK_3) {
 					m_rendering_mode = RENDERING_BUMP;
+					std::cout << "bumpmap rendering" << std::endl;
+				}
 				if (event.key.keysym.sym == SDLK_SPACE)
 					m_rotating = !m_rotating;
 				break;
@@ -412,6 +427,8 @@ GameManager::TerrainMesh GameManager::createTriangleStripMesh(unsigned int nx, u
 		for (unsigned int i=0; i<=nx; ++i) {
 			mesh.vertices.push_back(i*dx);	//x
 			mesh.vertices.push_back(j*dy);	//y
+			mesh.normals.push_back(0.0f);
+			mesh.normals.push_back(1.0f);
 		}
 	}
 

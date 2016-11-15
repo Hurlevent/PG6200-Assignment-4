@@ -18,10 +18,10 @@ void main() {
 	vec4 normal = texture2D(nm_normal_map, texture_coord);
 	
 
-	vec3 h = normalize(f_v + f_l);
+	vec3 h = normalize(normalize(f_v) + normalize(f_l));
 	vec3 n = normalize(normal.xyz);
 
-	float diff = max(0.1f, dot(n, f_l));
+	float diff = max(0.1f, dot(n, normalize(f_l)));
 
 	float spec = pow(max(0.0f, dot(n, h)), 128.0f);
 
