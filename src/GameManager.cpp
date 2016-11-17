@@ -23,7 +23,7 @@ using GLUtils::readFile;
 
 GameManager::GameManager() : m_rendering_mode(RENDERING_REGULAR), m_rotating(false), m_rotation_speed(2.0f) {
 	my_timer.restart();
-	mesh = createTriangleStripMesh(10, 10);
+	mesh = createTriangleStripMesh(2, 2);
 }
 
 GameManager::~GameManager() {
