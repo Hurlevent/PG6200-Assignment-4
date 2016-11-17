@@ -21,7 +21,7 @@ using GLUtils::Program;
 using GLUtils::readFile;
 
 
-GameManager::GameManager() : m_rendering_mode(RENDERING_REGULAR), m_rotating(false) {
+GameManager::GameManager() : m_rendering_mode(RENDERING_REGULAR), m_rotating(false), m_rotation_speed(2.0f) {
 	my_timer.restart();
 	mesh = createTriangleStripMesh(10, 10);
 }
@@ -90,7 +90,7 @@ void GameManager::createMatrices() {
 	projection_matrix = glm::perspective(45.0f, window_width / (float) window_height, 0.2f, 3.0f);
 
 	model_matrix = glm::mat4(1.0);
-	model_matrix = glm::rotate(model_matrix, 90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+	//model_matrix = glm::rotate(model_matrix, 90.0f, glm::vec3(0.0f, 0.0f, 0.0f));
 	//model_matrix = glm::rotate(model_matrix, 25.0f, glm::vec3(0.0f, 1.0f, 0.0f)); // Kan slettes
 	model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, -0.5f, -0.5f));
 
@@ -100,7 +100,7 @@ void GameManager::createMatrices() {
 
 	normals = glm::vec3(0.0f, 0.0f, 1.0f);
 
-	light_pos = glm::vec3(200.0f, 200.0f, 200.0f);
+	light_pos = glm::vec3(0.0f, 200.0f, 200.0f);
 
 }
 
@@ -117,7 +117,6 @@ void GameManager::createSimpleProgram() {
 	glUniformMatrix4fv(regular_program->getUniform("reg_projection"), 1, 0, glm::value_ptr(projection_matrix));
 	glUniformMatrix4fv(regular_program->getUniform("reg_view"), 1, 0, glm::value_ptr(view_matrix));
 	glUniformMatrix4fv(regular_program->getUniform("reg_model"), 1, 0, glm::value_ptr(model_matrix));
-	//glUniform3fv(regular_program->getUniform("reg_normal"), 1, glm::value_ptr(normals));
 	glUniform3fv(regular_program->getUniform("reg_light_pos"), 1, glm::value_ptr(light_pos));
 	
 	regular_program->disuse();
@@ -244,24 +243,27 @@ void GameManager::init() {
 
 void GameManager::render() {
 	double elapsed = my_timer.elapsedAndRestart();
-	float rotate_degrees = static_cast<float>(elapsed) * 10.0f;
+	float rotate_degrees = static_cast<float>(elapsed) * m_rotation_speed;
 
 	//Clear screen, and set the correct program
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	//Rotate the model
+	if (m_rotating) {
+		model_matrix = glm::translate(model_matrix, glm::vec3(0.5f, 0.5f, 0.0f));
+		model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 1.0f, 0.0f));
+		model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, -0.5f, 0.0f));
+	}
+	
+	glm::mat4 transpose_inverse_modelview = glm::transpose(glm::inverse(view_matrix * model_matrix));
+
 	if (m_rendering_mode == RENDERING_REGULAR) {
 		regular_program->use();
-
-		//Rotate the model
-		model_matrix = glm::translate(model_matrix, glm::vec3(0.5f, 0.0f, 0.5f));
-		if (m_rotating) {
-			model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 0.0f, 1.0f));
-		}
-		model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, 0.0f, -0.5f));
-
-		glm::mat4 transpose_inverse_modelview = glm::transpose(glm::inverse(view_matrix * model_matrix));
+	
 		glUniformMatrix4fv(regular_program->getUniform("reg_model"), 1, 0, glm::value_ptr(model_matrix));
 		glUniformMatrix4fv(regular_program->getUniform("reg_transpose_inverse_modelview"), 1, 0, glm::value_ptr(transpose_inverse_modelview));
+
+
 
 		glActiveTexture(GL_TEXTURE0);
 		CHECK_GL_ERROR();
@@ -282,14 +284,10 @@ void GameManager::render() {
 	} else if(m_rendering_mode == RENDERING_NORMAL)
 	{
 		normal_map_program->use();
-
-		//Rotate the model
-		model_matrix = glm::translate(model_matrix, glm::vec3(0.5f, 0.0f, 0.5f));
-		if (m_rotating) {
-			model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 0.0f, 1.0f));
-		}
-		model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, 0.0f, -0.5f));
+		
+		
 		glUniformMatrix4fv(normal_map_program->getUniform("nm_model"), 1, 0, glm::value_ptr(model_matrix));
+		glUniformMatrix4fv(normal_map_program->getUniform("nm_transpose_inverse_modelview"), 1, 0, glm::value_ptr(transpose_inverse_modelview));
 
 		glActiveTexture(GL_TEXTURE0);
 		CHECK_GL_ERROR();
@@ -316,13 +314,8 @@ void GameManager::render() {
 	{
 		bump_map_program->use();
 
-		//Rotate the model
-		model_matrix = glm::translate(model_matrix, glm::vec3(0.5f, 0.0f, 0.5f));
-		if (m_rotating) {
-			model_matrix = glm::rotate(model_matrix, rotate_degrees, glm::vec3(0.0f, 0.0f, 1.0f));
-		}
-		model_matrix = glm::translate(model_matrix, glm::vec3(-0.5f, 0.0f, -0.5f));
 		glUniformMatrix4fv(bump_map_program->getUniform("bump_model"), 1, 0, glm::value_ptr(model_matrix));
+		glUniformMatrix4fv(bump_map_program->getUniform("bump_transpose_inverse_modelview"), 1, 0, glm::value_ptr(transpose_inverse_modelview));
 
 		glActiveTexture(GL_TEXTURE0);
 		CHECK_GL_ERROR();
@@ -392,6 +385,12 @@ void GameManager::play() {
 				}
 				if (event.key.keysym.sym == SDLK_SPACE)
 					m_rotating = !m_rotating;
+				if (event.key.keysym.sym == SDLK_x) {
+					m_rotation_speed += 1.0f;
+				}
+				if (event.key.keysym.sym == SDLK_z) {
+					m_rotation_speed -= 1.0f;
+				}
 				break;
 			case SDL_QUIT: //e.g., user clicks the upper right x
 				doExit = true;

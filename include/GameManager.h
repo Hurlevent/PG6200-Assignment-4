@@ -120,6 +120,8 @@ private:
 
 	bool m_rotating;
 
+	float m_rotation_speed;
+
 	SDL_Window* main_window; //< Our window handle
 	SDL_GLContext main_context; //< Our opengl context handle 
 	

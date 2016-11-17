@@ -2,6 +2,8 @@
 
 uniform sampler2D nm_color_texture;
 uniform sampler2D nm_normal_map;
+uniform mat4 nm_model;
+uniform mat4 nm_transpose_inverse_modelview;
 
 in vec2 texture_coord;
 
@@ -11,15 +13,15 @@ in vec3 f_l;
 out vec4 res_Color;
 
 
-
 void main() {
 	
 	vec4 color = texture2D(nm_color_texture, texture_coord);
 	vec4 normal = texture2D(nm_normal_map, texture_coord);
 	
+	vec4 transformed_normal = nm_transpose_inverse_modelview * normal;
 
 	vec3 h = normalize(normalize(f_v) + normalize(f_l));
-	vec3 n = normalize(normal.xyz);
+	vec3 n = normalize(transformed_normal.xyz);
 
 	float diff = max(0.1f, dot(n, normalize(f_l)));
 

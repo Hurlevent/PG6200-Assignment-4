@@ -26,13 +26,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\bump.frag" />
-    <None Include="shaders\bump.vert" />
     <None Include="shaders\normal.frag" />
     <None Include="shaders\normal.vert" />
     <None Include="shaders\normal_mapping.frag" />
     <None Include="shaders\normal_mapping.vert" />
     <None Include="shaders\regular.frag" />
     <None Include="shaders\regular.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="shaders\bump.vert" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0EB6082A-7B48-4E60-B4B3-2EB3C7254AC1}</ProjectGuid>

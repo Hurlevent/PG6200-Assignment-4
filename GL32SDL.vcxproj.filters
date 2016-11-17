@@ -70,11 +70,13 @@
     <None Include="shaders\normal_mapping.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="shaders\bump.vert">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="shaders\bump.frag">
       <Filter>Resource Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="shaders\bump.vert">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

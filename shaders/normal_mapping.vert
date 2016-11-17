@@ -13,7 +13,7 @@ out vec3 f_v;
 out vec3 f_l;
 
 void main() {
-	vec4 pos = nm_view * nm_model * vec4(in_Position.x, 0.0, in_Position.y, 1.0); // WTF?? HAN BYTTER Y OG Z
+	vec4 pos = nm_view * nm_model * vec4(in_Position.x, in_Position.y, 0.0, 1.0); 
 	
 
 	gl_Position = nm_projection * pos;

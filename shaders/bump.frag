@@ -2,6 +2,8 @@
 
 uniform sampler2D bump_color_texture;
 uniform sampler2D bump_normal_map;
+uniform mat4 bump_model;
+uniform mat4 bump_transpose_inverse_modelview;
 
 in vec2 texture_coord;
 
@@ -16,10 +18,12 @@ void main() {
 	
 	vec4 color = texture2D(bump_color_texture, texture_coord);
 	vec4 normal = texture2D(bump_normal_map, texture_coord);
-	
+
+		
+	vec4 transformed_normal = bump_transpose_inverse_modelview * (normal * 2 - 1);
 
 	vec3 h = normalize(f_v + f_l);
-	vec3 n = normalize(normal.xyz);
+	vec3 n = normalize(transformed_normal.xyz);
 
 	float diff = max(0.1f, dot(n, f_l));
 
